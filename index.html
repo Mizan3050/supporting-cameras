@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Supporting Cameras</title>
+
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+
+      .container {
+        margin: 20px;
+        padding: 10px;
+      }
+
+      .distance-inputs,
+      .light-inputs {
+        display: flex;
+        justify-content: flex-start;
+        width: 100%;
+      }
+
+      .input {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        width: 300px;
+        margin: 20px 20px 20px 0;
+        input {
+          margin: 3px 0;
+          height: 38px;
+        }
+      }
+
+      .action-btn {
+        height: 40px;
+        background: rgb(94, 0, 0);
+        border: none;
+        padding: 0 20px;
+        color: white;
+        border-radius: 3px;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="camera-inputs">
+        ✅ Recommended limits for <strong>Subject Distance</strong>: <br />Min:
+        0 <br />Max: 20
+        <div class="distance-inputs">
+          <div class="input">
+            <label for="min_length">Min length</label>
+            <input type="number" id="min_length" />
+          </div>
+          <div class="input">
+            <label for="max_length">Max length</label>
+            <input type="number" id="max_length" />
+          </div>
+        </div>
+
+        ✅ Recommended limits for <strong>Light Level</strong>: <br />Min: 5
+        <br />Max: 5000
+        <div class="light-inputs">
+          <div class="input">
+            <label for="min_light">Min light levels</label>
+            <input type="number" id="min_light" />
+          </div>
+          <div class="input">
+            <label for="max_light">Max light levels</label>
+            <input type="number" id="max_light" />
+          </div>
+        </div>
+
+        <button
+          class="action-btn"
+          onclick="validateCameraCharacteristicsInputs()"
+        >
+          Get supporting cameras
+        </button>
+
+        <br />
+        <br />
+        <div class="list-of-cameras"></div>
+      </div>
+    </div>
+  </body>
+
+  <script>
+    const HARDWARE_CAMERAS = [
+      {
+        name: "CamAlpha",
+        distance_range: [0.5, 2.0],
+        light_range: [100, 300],
+      },
+      {
+        name: "CamBeta",
+        distance_range: [1.5, 5.0],
+        light_range: [200, 800],
+      },
+      {
+        name: "CamGamma",
+        distance_range: [4.5, 10.0],
+        light_range: [500, 1500],
+      },
+      {
+        name: "CamDelta",
+        distance_range: [0.1, 1.0],
+        light_range: [10, 150],
+      },
+      {
+        name: "CamEpsilon",
+        distance_range: [2.0, 6.0],
+        light_range: [50, 300],
+      },
+      {
+        name: "CamZeta",
+        distance_range: [8.0, 15.0],
+        light_range: [700, 2000],
+      },
+      {
+        name: "CamEta",
+        distance_range: [0.0, 0.8],
+        light_range: [5, 120],
+      },
+      {
+        name: "CamTheta",
+        distance_range: [3.0, 7.0],
+        light_range: [250, 600],
+      },
+      {
+        name: "CamIota",
+        distance_range: [10.0, 20.0],
+        light_range: [1000, 5000],
+      },
+      {
+        name: "CamKappa",
+        distance_range: [1.2, 3.5],
+        light_range: [80, 180],
+      },
+    ];
+
+    function validateCameraCharacteristicsInputs() {
+      const min_length = +document.querySelector("#min_length").value;
+      const max_length = +document.querySelector("#max_length").value;
+      const min_light = +document.querySelector("#min_light").value;
+      const max_light = +document.querySelector("#max_light").value;
+
+      const desiredDistanceRange = [min_length, max_length];
+      const desiredLightRange = [min_light, max_light];
+      const selectedCameras = getSupportingCameras(
+        desiredDistanceRange,
+        desiredLightRange
+      );
+      const list_of_cameras = document.querySelector(".list-of-cameras");
+      if (selectedCameras) {
+        console.log("Supported by the following cameras:");
+        const strongNode = document.createElement("strong");
+        strongNode.innerText = "List of supporting cameras:";
+        list_of_cameras.appendChild(strongNode);
+        selectedCameras.forEach((cam, i) => {
+          const node = document.createElement("p");
+          node.innerText = i + 1 + ". " + cam.name;
+          list_of_cameras.appendChild(node);
+        });
+      } else {
+        console.log("Cameras with desired input characteristics not found.");
+        const strongNode = document.createElement("strong");
+        strongNode.innerText = "The desired input characteristics not found.";
+        list_of_cameras.appendChild(strongNode);
+      }
+    }
+
+    function getCoveringCameras(desiredRange, rangeKey) {
+      const [desiredMin, desiredMax] = desiredRange;
+
+      // Sort by start of the range
+      const sorted = HARDWARE_CAMERAS.map((cam) => ({ ...cam })).sort(
+        (a, b) => a[rangeKey][0] - b[rangeKey][0]
+      );
+
+      let coverageStart = desiredMin;
+      const selected = [];
+
+      for (const cam of sorted) {
+        const [start, end] = cam[rangeKey];
+
+        // using epsilon to avoid precision error
+        if (start > coverageStart + 1e-9) {
+          // There's a gap
+          break;
+        }
+
+        if (end > coverageStart) {
+          selected.push(cam);
+          coverageStart = Math.max(coverageStart, end);
+        }
+
+        if (coverageStart >= desiredMax) {
+          return selected; // Successfully covered
+        }
+      }
+
+      return null; // Incomplete coverage
+    }
+
+    function getSupportingCameras(desiredDistanceRange, desiredLightRange) {
+      const distanceCams = getCoveringCameras(
+        desiredDistanceRange,
+        "distance_range"
+      );
+      const lightCams = getCoveringCameras(desiredLightRange, "light_range");
+
+      if (!distanceCams || !lightCams) {
+        return null;
+      }
+
+      // Return the union of both sets (remove duplicates)
+      const cameraSet = new Map();
+
+      [...distanceCams, ...lightCams].forEach((cam) => {
+        cameraSet.set(cam.name, cam);
+      });
+
+      return Array.from(cameraSet.values());
+    }
+  </script>
+</html>
