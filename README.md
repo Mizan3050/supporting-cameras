@@ -28,10 +28,8 @@ This is a simple frontend application that evaluates whether a group of hardware
 
 ### Input Desired Ranges
 
-  Enter min/max values for subject distance (e.g., 0 to 10 meters)
-
-  Enter min/max values for light levels (e.g., 50 to 1500 lux)
-
-Click the "Get supporting cameras" button
+1. Enter min/max values for subject distance (e.g., 0 to 10 meters)
+2. Enter min/max values for light levels (e.g., 50 to 1500 lux)
+3. Click the "Get supporting cameras" button
 
 The app will give you the list of supported cameras.
